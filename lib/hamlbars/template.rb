@@ -68,6 +68,14 @@ module Hamlbars
     def self.template_partial_method=(x)
       @template_partial_method = x
     end
+    
+    def self.templates_root
+      @templates_root ||= ''
+    end
+
+    def self.templates_root=(root_path)
+      @templates_root = root_path
+    end
 
     self.default_mime_type = 'application/javascript'
 
@@ -100,10 +108,10 @@ module Hamlbars
       end
 
       if basename =~ /^_/
-        name = partial_path_translator(path)
+        name = partial_path_translator(with_templates_root(path))
         "#{self.class.template_partial_method}('#{name}', '#{template.strip.gsub(/(\r\n|[\n\r"'])/) { JS_ESCAPE_MAP[$1] }}');\n"
       else
-        name = self.class.path_translator(path)
+        name = self.class.path_translator(with_templates_root(path))
         "#{self.class.template_destination}[\"#{name}\"] = #{self.class.template_compiler}(\"#{template.strip.gsub(/(\r\n|[\n\r"'])/) { JS_ESCAPE_MAP[$1] }}\");\n"
       end
     end
@@ -114,6 +122,10 @@ module Hamlbars
     def partial_path_translator(path)
       path = remove_underscore_from_partial_path(path)
       self.class.path_translator(path).gsub(%r{/}, '.')
+    end
+    
+    def with_templates_root(path)
+      self.class.templates_root.empty? ? path : "#{self.class.templates_root}/#{path}"
     end
 
     private

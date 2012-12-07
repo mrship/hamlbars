@@ -293,5 +293,42 @@ describe Hamlbars::Template, '::render_templates_for' do
 
   end
 
+  describe Hamlbars::Template, '::templates_root' do
+    subject { Hamlbars::Template }
 
+    it "::templates_root should be '' by default" do
+      subject.templates_root.should == ''
+    end
+
+    it "::templates_root should be settable" do
+      subject.templates_root = 'templates'
+      subject.templates_root.should eq 'templates'
+    end
+
+    context "when the ::templates_root is set" do
+      after(:all) do
+        template_file.unlink
+      end
+
+      let(:template_file) { Tempfile.new 'hamlbars_template' }
+
+      before :each do
+        subject.templates_root = 'templates'
+        template_file.rewind
+        Hamlbars::Template.enable_closures! 
+      end
+
+      after :each do
+        template_file.flush
+        Hamlbars::Template.disable_closures! 
+      end
+
+      it "includes the templates_root as part of the path" do
+        template_file.write("")
+        template_file.rewind
+        template = subject.new(template_file)
+        template.render.should == "(function() { Handlebars.templates[\"#{Hamlbars::Template.path_translator("templates/" + File.basename(template_file.path))}\"] = Handlebars.compile(\"\");\n }).call(this)"
+      end
+    end
+  end
 end
